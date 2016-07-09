@@ -1,0 +1,42 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Suggestion Box</title>
+	<style>
+		.modal {
+			background-color: #eee;
+			padding: 2em;
+			position: relative;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+	</style>
+</head>
+<body>
+	<button id="makeButton" onclick="makeSuggestion()">Make</button>
+	<button id="takeButton" onclick="takeSuggestion()">Take</button>
+	<script src="./js/app.js"></script>
+	<script>
+		function makeSuggestion(){
+			var makeButton = document.getElementById('makeButton')
+			makeButton.onclick = function(){}
+			console.log('Make suggestion')
+			var modal = document.createElement('div')
+			var closeButton = document.createElement('button')
+			closeButton.onclick = function() {
+				makeButton.onlick = function() { console.log('Hello!!') }
+				document.body.removeChild(modal)
+			}
+			modal.className = 'modal'
+			modal.innerHTML = 'Hello!'
+			document.body.appendChild(modal)
+			closeButton.innerHTML = 'Close'
+			modal.appendChild(closeButton)
+		}
+
+		function takeSuggestion(){
+			console.log('Take suggestion')
+		}
+	</script>
+</body>
+</html>
