@@ -2,6 +2,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     bson (4.1.1)
+    bson_ext (1.5.1)
     daemons (1.2.3)
     eventmachine (1.2.0.1)
     mongo (2.2.5)
@@ -23,6 +24,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  bson_ext
   mongo
   sinatra
   thin
