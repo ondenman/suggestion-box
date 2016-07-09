@@ -78,11 +78,14 @@ end
 
 # request a suggestion
 get '/take' do
-  suggestion = box.random_suggestion          
-  return { 
-    suggestion: suggestion[:suggestion], 
-    id: suggestion[:_id].to_s
-    }.to_json
+  suggestion = box.random_suggestion
+  if suggestion       
+    return { 
+      suggestion: suggestion[:suggestion], 
+      id: suggestion[:_id].to_s
+      }.to_json
+  end
+  return {status: 'No suggestions to retrieve'}.to_json
 end
 
 # rate a suggestion
