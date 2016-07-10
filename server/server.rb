@@ -9,7 +9,8 @@ require 'mongo'
 class SuggestionBox
   attr_accessor :suggestions_count
   attr_reader :client
-  def initialize
+
+  def initialize§
     @client = Mongo::Client.new([ '127.0.0.1:27017' ], :database => 'suggestion-box')
     create_collection
   end
@@ -29,34 +30,33 @@ class SuggestionBox
   end
 
   def find_suggestion(id)
-    id = BSON::ObjectId(id)
     @client[:suggestions]
-      .find({_id: id })
+      .find({_id: BSON::ObjectId(id) })
       .limit(1)
       .first || false
   end
 
   def update_rating(id, rating)
-    id = BSON::ObjectId(id)
-    @client[:suggestions]
-      .update_one(
-        { _id: id }, 
-        { "$inc" => { rating: 1 } }
-      )
+    @client[:suggestions].find({id: BSON::ObjectId(id)})
+     .update_one({ :rating => rating })
+  end
+
+  def edit_suggestion(id, str)
+    @client[:suggestions].find({_id: BSON::ObjectId(id)})
+      .update_one({suggestion: str})
   end
 
   def add_suggestion(str, ip)
-    new_suggestion = {suggestion: str, ip: ip }
+    new_suggestion = {suggestion: str, ip: ip, rating: 0 }
     result = @client[:suggestions].insert_one(new_suggestion)
     @suggestions_count += 1 unless result.n != 1
     result
   end
 
   def delete_suggestion(id)
-    id = BSON::ObjectId(id)
     @suggestions_count -= 1
     @client[:suggestions]
-      .delete_one( { _id: id } )
+      .delete_one( { _id: BSON::ObjectId(id) } )
   end
 
   def all_suggestions
@@ -67,6 +67,7 @@ class SuggestionBox
     @client[:suggestions].drop
     create_collection
   end
+
 end
 
 
@@ -80,37 +81,29 @@ end
 get '/take' do
   suggestion = box.random_suggestion
   if suggestion       
-    return { 
+    return {
+      success: true,
       suggestion: suggestion[:suggestion], 
       id: suggestion[:_id].to_s
       }.to_json
   end
-  return {status: 'No suggestions to retrieve'}.to_json
+  return {success: false}.to_json
 end
 
 # rate a suggestion
 post '/take' do
   begin
     jdata = JSON.parse(request.body.read, :symbolize_names => true)
-    if jdata.has_key?(:rating) && jdata.has_key?(:id)
-      suggestion = box.find_suggestion(jdata[:id])
-      if suggestion
-        current_rating = suggestion[:rating] || 0
-        current_rating += jdata[:rating]
-
-        if current_rating.to_i < 2
-          result = box.update_rating(jdata[:id], jdata[:rating])
-          return {status: "Rated! Good work! #{result[:rating]}"}.to_json
-        else
-          result = box.delete_suggestion(jdata[:id])
-        end
-
-      else
-        return {status: "Unable to rate that suggestion :("}.to_json
-      end
+    if jdata.has_key?(:rating) 
+    && jdata.has_key?(:id) 
+    && box.find_suggestion(jdata[:id])
+      box.update_rating(jdata[:id], jdata[:rating])
+      return {success: true}.to_json
+    else
+      return {success: false}.to_json
     end
   rescue Exception => e
-      return {status: e}
+      return {success: false, status: e}
   end
 end
 
@@ -120,31 +113,32 @@ post '/make' do
     jdata = JSON.parse(request.body.read, :symbolize_names => true) 
     if jdata.has_key?(:suggestion)
       result = box.add_suggestion(jdata[:suggestion], request.ip)
-      return {status: "Suggestion received. Thanks!  #{result.inserted_id}"}.to_json
+      return {success: true}.to_json
     else
-      return {status: "Unable to receive suggestion."}.to_json
+      return {success: false}.to_json
     end
   rescue Exception => e
-      return {status: e}
+      return {status: e, success: false}
   end
 end
 
 # list all suggestions
 get '/list' do
   result = { all_suggestions: [] }
-  box.all_suggestions.each do |sug|
+  box.all_suggestions.each do |e|
     result[:all_suggestions].push({
-      suggestion: sug[:suggestion],
-      id: sug[:_id].to_s,
-      ip: sug[:ip]
+      suggestion: e[:suggestion],
+      id: e[:_id].to_s,
+      ip: e[:ip]
       })
   end
+  result[:success] = true
   return result.to_json
 end
 
 # remove all suggestions
 get '/wipe' do
   result = box.wipe
-  { status: "All wiped!" }.to_json
+  { success: true }.to_json
 end
 

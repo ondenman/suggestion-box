@@ -2,6 +2,8 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Suggestion Box</title>
+	<link rel="stylesheet" href="./style/sweetalert.css">
+	<script src="./js/sweetalert.min.js"></script>
 	<style>
 		.modal {
 			background-color: #eee;
@@ -17,25 +19,44 @@
 	<button id="takeButton" onclick="takeSuggestion()">Take</button>
 	<script src="./js/app.js"></script>
 	<script>
+		suggestionBox.list(function(res) {
+			console.log(res)
+		})
+
 		function makeSuggestion(){
-			var makeButton = document.getElementById('makeButton')
-			makeButton.onclick = function(){}
-			console.log('Make suggestion')
-			var modal = document.createElement('div')
-			var closeButton = document.createElement('button')
-			closeButton.onclick = function() {
-				makeButton.onlick = function() { console.log('Hello!!') }
-				document.body.removeChild(modal)
-			}
-			modal.className = 'modal'
-			modal.innerHTML = 'Hello!'
-			document.body.appendChild(modal)
-			closeButton.innerHTML = 'Close'
-			modal.appendChild(closeButton)
 		}
 
 		function takeSuggestion(){
-			console.log('Take suggestion')
+			suggestionBox.takeSuggestion(function(res, currentId){
+				suggestion = JSON.parse(res.responseText).suggestion ||
+								JSON.parse(res.responseText).status
+				id = currentId
+				console.log(id)
+				console.log("And I have: "+id)
+				console.log(suggestion)
+				console.log(res)
+				sweetAlert({   
+				title: "Suggestion",
+				text: suggestion+" ",
+				showCancelButton: true,
+				allowOutsideClick: false,
+				allowEscapeKey: false,
+				confirmButtonText: "Great!",
+				cancelButtonText: "Meh",
+				closeOnConfirm: true,
+				closeOnCancel: true }, 
+				function(isConfirm){
+					if (isConfirm) {
+						suggestionBox.suggestionRatedGreat(suggestion.currentId, function(res){
+							console.log(res.responseText)
+						})
+					} else {
+						suggestionBox.suggestionRatedMeh(suggestion.currentId, function(res){
+							console.log(res.responseText)
+						})
+					}
+				})
+			})
 		}
 	</script>
 </body>
